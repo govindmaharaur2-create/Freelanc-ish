@@ -1,0 +1,355 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelanc-ish</title>
+  <style>
+    body { margin: 0; background: #fff7dc; color: #282439; font: 16px  }
+    [hidden] { display: none !important; }
+    header { padding: 20px; background: #1F2937; border-bottom: 2px solid #282439; }
+    .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    header h1 { margin: 0 0 8px; color: #FFD166; font-family: Georgia, 'Palatino Linotype', 'Book Antiqua', serif; font-size: 2.4rem; letter-spacing: 0.04em; }
+    header p { margin: 0; color: #fff7dc; }
+    #accountBar { display: flex; align-items: center; gap: 12px; color: #fff7dc; }
+    main { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+    .auth-shell { max-width: 480px; margin: 42px auto; padding: 0 16px; }
+    .auth-card { padding: 24px; }
+    .auth-card h2 { margin: 0 0 8px; color: #1F2937; font-family: Georgia, 'Palatino Linotype', 'Book Antiqua', serif; }
+    .auth-intro { margin: 0 0 18px; line-height: 1.5; }
+    .auth-tabs, .provider-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .auth-tabs { margin-bottom: 18px; }
+    .auth-tab { background: #fff7dc; }
+    .auth-tab.active { background: #1F2937; color: #FFD166; }
+    .auth-card form { margin-bottom: 12px; }
+    .auth-card label { font-weight: 600; }
+    .auth-card input { box-sizing: border-box; width: 100%; }
+    .provider-options button { background: #fff; color: #1F2937; }
+    .auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #625e6e; font-size: 14px; }
+    .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: #d5d0c5; }
+    .auth-note { margin: 16px 0 0; color: #625e6e; font-size: 13px; line-height: 1.45; }
+    #authMessage { min-height: 1.4em; margin: 8px 0; color: #8b2c13; }
+    #authMessage.success { color: #23633e; }
+    .stats, .columns { display: grid; gap: 12px; }
+    .stats { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
+    .columns { grid-template-columns: 1fr 1fr; }
+    .box, .stat { padding: 16px; background: #ffffff; border: 2px solid #2605ba; border-radius: 8px; }
+    .stat b { display: block; margin-top: 6px; font-size: 22px; }
+    form { display: grid; gap: 8px; }
+    input, select, button { padding: 9px; font: inherit; }
+    button { background: #F97316; border: 1px solid #282439; cursor: pointer; }
+    table { width: 100%; margin-top: 16px; border-collapse: collapse; }
+    th, td { padding: 8px; border-bottom: 1px solid #aaa; text-align: left; }
+    #clock { margin: 16px; font-size: 30px; text-align: center; }
+    @media (max-width: 650px) { .columns, .stats { grid-template-columns: 1fr; } .header-inner { align-items: flex-start; flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div><h1>Freelanc-ish</h1><p>Keep your projects and work hours in one place.</p></div>
+      <div id="accountBar" hidden><span id="welcomeText"></span><button id="logoutButton" type="button">Log out</button></div>
+    </div>
+  </header>
+  <section id="authScreen" class="auth-shell" hidden>
+    <div class="box auth-card">
+      <h2 id="authTitle">Log in</h2>
+      <p class="auth-intro">Save your freelance projects and hours in your local profile.</p>
+      <div class="auth-tabs" role="group" aria-label="Choose login or sign-up">
+        <button class="auth-tab active" id="loginTab" type="button" aria-pressed="true">Log in</button>
+        <button class="auth-tab" id="signupTab" type="button" aria-pressed="false">Sign up</button>
+      </div>
+      <form id="phoneForm">
+        <div id="nameFieldGroup" hidden>
+          <label for="fullName">Your name</label>
+          <input id="fullName" name="name" autocomplete="name" placeholder="Name">
+        </div>
+        <label for="mobileNumber">Mobile number</label>
+        <input id="mobileNumber" name="mobile" type="tel" autocomplete="tel" inputmode="tel" placeholder="e.g. +1 555 123 4567" required>
+        <button id="phoneSubmit" type="submit">Log in with mobile number</button>
+      </form>
+      <p id="authMessage" role="status" aria-live="polite"></p>
+      <div class="auth-divider">or continue with</div>
+      <div class="provider-options">
+        <button id="googleButton" type="button">Continue with Google</button>
+        <button id="twitterButton" type="button">Continue with Twitter</button>
+      </div>
+      <p class="auth-note">Local demo: profiles and sessions are saved in this browser. Mobile numbers are not verified by SMS, and Google/Twitter buttons create local demo profiles without connecting to those services.</p>
+    </div>
+  </section>
+  <main id="trackerApp" hidden>
+    <section class="stats">
+      <div class="stat">Projects <b id="projectCount">0</b></div><div class="stat">Hours <b id="hoursTotal">0.0</b></div><div class="stat">Estimated earnings <b id="earned">$0.00</b></div>
+    </section>
+    <div class="columns">
+      <section class="box">
+        <h2>Add a project</h2>
+        <form id="projectForm">
+          <input name="title" placeholder="Project name" required>
+          <input name="client" placeholder="Client name" required>
+          <input name="rate" type="number" min="0" value="25" required>
+          <button>Add project</button>
+        </form>
+      </section>
+      <section class="box">
+        <h2>Work timer</h2>
+        <label for="timerProject">Choose a project:</label>
+        <select id="timerProject"></select>
+        <div id="clock">00:00:00</div>
+        <button id="timerButton">Start timer</button>
+      </section>
+    </div>
+    <section class="box">
+      <h2>Projects</h2>
+      <table>
+        <thead><tr><th>Project</th><th>Status</th><th>Rate / hours</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+  </main>
+  <script>
+    const KEY = "freelanceish-v1";
+    const ACCOUNTS_KEY = "freelanceish-accounts-v1";
+    const SESSION_KEY = "freelanceish-session-v1";
+    let accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "[]");
+    let currentUser = null;
+    let projects = [];
+    let timer = null;
+    const form = document.querySelector("#projectForm");
+    const authScreen = document.querySelector("#authScreen");
+    const trackerApp = document.querySelector("#trackerApp");
+    let authMode = "login";
+
+    function save() {
+      if (!currentUser) return;
+      localStorage.setItem(KEY + "-user-" + currentUser.id, JSON.stringify({ projects: projects, running: timer }));
+    }
+
+    function showAuthMessage(message, isSuccess) {
+      const element = document.querySelector("#authMessage");
+      element.textContent = message;
+      element.classList.toggle("success", Boolean(isSuccess));
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const signingUp = mode === "signup";
+      document.querySelector("#authTitle").textContent = signingUp ? "Create your account" : "Log in";
+      document.querySelector("#nameFieldGroup").hidden = !signingUp;
+      document.querySelector("#fullName").required = signingUp;
+      document.querySelector("#phoneSubmit").textContent = signingUp ? "Sign up with mobile number" : "Log in with mobile number";
+      document.querySelector("#loginTab").classList.toggle("active", !signingUp);
+      document.querySelector("#signupTab").classList.toggle("active", signingUp);
+      document.querySelector("#loginTab").setAttribute("aria-pressed", String(!signingUp));
+      document.querySelector("#signupTab").setAttribute("aria-pressed", String(signingUp));
+      showAuthMessage("", false);
+    }
+
+    function loadUserData() {
+      const userDataKey = KEY + "-user-" + currentUser.id;
+      let savedData = localStorage.getItem(userDataKey);
+      if (!savedData && localStorage.getItem(KEY) && localStorage.getItem(KEY + "-legacy-imported") !== "true") {
+        savedData = localStorage.getItem(KEY);
+        localStorage.setItem(KEY + "-legacy-imported", "true");
+      }
+      const saved = JSON.parse(savedData || '{"projects":[],"running":null}');
+      projects = Array.isArray(saved.projects) ? saved.projects : [];
+      timer = saved.running || null;
+      if (!localStorage.getItem(userDataKey)) save();
+    }
+
+    function enterApp(user) {
+      currentUser = user;
+      localStorage.setItem(SESSION_KEY, user.id);
+      document.querySelector("#welcomeText").textContent = "Hi, " + user.name;
+      document.querySelector("#accountBar").hidden = false;
+      authScreen.hidden = true;
+      trackerApp.hidden = false;
+      loadUserData();
+      render();
+    }
+
+    function normalizeMobile(value) {
+      return value.replace(/[^\d]/g, "");
+    }
+
+    document.querySelector("#loginTab").onclick = function() { setAuthMode("login"); };
+    document.querySelector("#signupTab").onclick = function() { setAuthMode("signup"); };
+
+    document.querySelector("#phoneForm").onsubmit = function(event) {
+      event.preventDefault();
+      const mobile = normalizeMobile(document.querySelector("#mobileNumber").value);
+      if (mobile.length < 7 || mobile.length > 15) {
+        showAuthMessage("Enter a valid mobile number with 7 to 15 digits.", false);
+        return;
+      }
+      let user = accounts.find(function(account) {
+        return account.provider === "mobile" && account.identifier === mobile;
+      });
+      if (authMode === "signup") {
+        if (user) {
+          showAuthMessage("An account with this number already exists. Log in instead.", false);
+          return;
+        }
+        user = { id: "mobile-" + mobile, provider: "mobile", identifier: mobile, name: document.querySelector("#fullName").value.trim() };
+        accounts.push(user);
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+      } else if (!user) {
+        showAuthMessage("No local profile found for this number. Choose Sign up to create one.", false);
+        return;
+      }
+      enterApp(user);
+    };
+
+    function useLocalProvider(provider, label) {
+      const identifier = "demo-" + provider;
+      let user = accounts.find(function(account) {
+        return account.provider === provider && account.identifier === identifier;
+      });
+      if (!user) {
+        user = { id: identifier, provider: provider, identifier: identifier, name: label + " demo user" };
+        accounts.push(user);
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+      }
+      enterApp(user);
+    }
+
+    document.querySelector("#googleButton").onclick = function() { useLocalProvider("google", "Google"); };
+    document.querySelector("#twitterButton").onclick = function() { useLocalProvider("twitter", "Twitter"); };
+
+    document.querySelector("#logoutButton").onclick = function() {
+      save();
+      currentUser = null;
+      localStorage.removeItem(SESSION_KEY);
+      trackerApp.hidden = true;
+      document.querySelector("#accountBar").hidden = true;
+      authScreen.hidden = false;
+      document.querySelector("#mobileNumber").value = "";
+      document.querySelector("#fullName").value = "";
+      setAuthMode("login");
+    };
+
+    function restoreSession() {
+      const sessionId = localStorage.getItem(SESSION_KEY);
+      const user = accounts.find(function(account) { return account.id === sessionId; });
+      if (user) enterApp(user);
+      else {
+        authScreen.hidden = false;
+        trackerApp.hidden = true;
+      }
+    }
+
+    function render() {
+      const rows = document.querySelector("#rows");
+      const choice = document.querySelector("#timerProject");
+      const oldChoice = choice.value;
+      rows.innerHTML = "";
+      choice.innerHTML = "";
+      let hours = 0;
+      let earnings = 0;
+
+      projects.forEach(function(project) {
+        hours += project.hours;
+        earnings += project.hours * project.rate;
+
+        const option = document.createElement("option");
+        option.value = project.id;
+        option.textContent = project.title;
+        choice.appendChild(option);
+
+        const row = document.createElement("tr");
+        const name = document.createElement("td");
+        name.textContent = project.title + " - " + project.client;
+        row.appendChild(name);
+
+        const statusCell = document.createElement("td");
+        const status = document.createElement("select");
+        status.innerHTML = "<option>New</option><option>In progress</option><option>Waiting</option><option>Done</option>";
+        status.value = project.status;
+        status.onchange = function() {
+          project.status = status.value;
+          save();
+        };
+        statusCell.appendChild(status);
+        row.appendChild(statusCell);
+
+        const rate = document.createElement("td");
+        rate.textContent = "$" + project.rate + " / " + project.hours.toFixed(1) + "h";
+        row.appendChild(rate);
+
+        const action = document.createElement("td");
+        const remove = document.createElement("button");
+        remove.textContent = "Delete";
+        remove.onclick = function() {
+          projects = projects.filter(function(item) {
+            return item.id !== project.id;
+          });
+          if (timer && timer.id === project.id) timer = null;
+          save();
+          render();
+        };
+        action.appendChild(remove);
+        row.appendChild(action);
+        rows.appendChild(row);
+      });
+
+      if (oldChoice) choice.value = oldChoice;
+      document.querySelector("#projectCount").textContent = projects.length;
+      document.querySelector("#hoursTotal").textContent = hours.toFixed(1) + "h";
+      document.querySelector("#earned").textContent = "$" + earnings.toFixed(2);
+      document.querySelector("#timerButton").textContent = timer ? "Stop and save" : "Start timer";
+      updateClock();
+    }
+
+    function updateClock() {
+      let seconds = timer ? Math.floor((Date.now() - timer.startedAt) / 1000) : 0;
+      let display = [
+        Math.floor(seconds / 3600),
+        Math.floor(seconds / 60) % 60,
+        seconds % 60
+      ];
+      document.querySelector("#clock").textContent = display.map(function(number) {
+        return String(number).padStart(2, "0");
+      }).join(":");
+    }
+
+    form.onsubmit = function(event) {
+      event.preventDefault();
+      const fields = new FormData(form);
+      projects.push({
+        id: String(Date.now()),
+        title: fields.get("title"),
+        client: fields.get("client"),
+        rate: Number(fields.get("rate")),
+        hours: 0,
+        status: "New"
+      });
+      form.reset();
+      save();
+      render();
+    };
+
+    document.querySelector("#timerButton").onclick = function() {
+      if (timer) {
+        const project = projects.find(function(item) {
+          return item.id === timer.id;
+        });
+        if (project) {
+          project.hours += Math.max(1, Math.round((Date.now() - timer.startedAt) / 60000)) / 60;
+        }
+        timer = null;
+      } else if (document.querySelector("#timerProject").value) {
+        timer = {
+          id: document.querySelector("#timerProject").value,
+          startedAt: Date.now()
+        };
+      }
+      save();
+      render();
+    };
+
+    setInterval(updateClock, 1000);
+    restoreSession();
+  </script>
+</body>
+</html>
